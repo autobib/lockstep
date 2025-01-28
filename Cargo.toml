@@ -1,0 +1,12 @@
+[package]
+authors = ["Alex Rutar <alex@rutar.org>"]
+name = "lockstep"
+version = "0.1.0"
+edition = "2021"
+
+description = "An iterator adaptor for selective zipping"
+keywords = ["iterator", "data-structure", "zip", "product"]
+categories = ["algorithms", "rust-patterns", "no-std"]
+
+[dev-dependencies]
+itertools = "0.14"
