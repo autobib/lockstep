@@ -12,7 +12,7 @@
 #![forbid(unsafe_code)]
 #![no_std]
 
-/// Returns a new [`Lockstep`] iterator adaptor .
+/// Returns a new [`Lockstep`] iterator adaptor
 ///
 /// The closure is called for each pair `(l, r)`:
 /// - If [`Control::SkipLeft`] is returned, `l` is replaced by the next element from the left iterator
