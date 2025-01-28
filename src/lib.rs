@@ -127,7 +127,14 @@ where
     fn size_hint(&self) -> (usize, Option<usize>) {
         let (_, l_max) = self.left.size_hint();
         let (_, r_max) = self.right.size_hint();
-        (0, l_max.or(r_max))
+
+        let upper = match (l_max, r_max) {
+            (None, None) => None,
+            (None, Some(v)) | (Some(v), None) => Some(v),
+            (Some(l), Some(r)) => Some(l.min(r)),
+        };
+
+        (0, upper)
     }
 }
 
