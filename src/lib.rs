@@ -133,11 +133,35 @@ where
 
 #[cfg(test)]
 mod tests {
-    use core::cmp::Ordering;
-
-    use itertools::assert_equal;
+    use core::{cmp::Ordering, fmt::Debug};
 
     use super::*;
+
+    #[track_caller]
+    fn assert_equal<I, J>(a: I, b: J)
+    where
+        I: IntoIterator,
+        J: IntoIterator,
+        I::Item: Debug + PartialEq<J::Item>,
+        J::Item: Debug,
+    {
+        let mut ia = a.into_iter();
+        let mut ib = b.into_iter();
+        let mut i: usize = 0;
+        loop {
+            match (ia.next(), ib.next()) {
+                (None, None) => return,
+                (a, b) => {
+                    let equal = match (&a, &b) {
+                        (Some(a), Some(b)) => a == b,
+                        _ => false,
+                    };
+                    assert!(equal, "Failed assertion {a:?} == {b:?} for iteration {i}");
+                    i += 1;
+                }
+            }
+        }
+    }
 
     #[test]
     fn intersection() {
