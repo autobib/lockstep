@@ -3,8 +3,7 @@ The *lockstep* iterator adaptor is an adapter similar to [`zip`](core::iter::zip
 uses a control flow closure to selectively skip elements from either the left or the right
 iterator, or yield the pair. This adaptor is primarily useful when working with sorted data.
 
-The main entrypoint is the [`lockstep`] function; see its documentation for more detail and
-examples.
+The main entrypoint is the [`lockstep`](https://docs.rs/lockstep/latest/lockstep/fn.lockstep.html) function.
 
 This crate is `#![no_std]` and `#![forbid(unsafe_code)]`.
 
