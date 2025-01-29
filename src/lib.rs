@@ -34,7 +34,7 @@
 ///     L: IntoIterator,
 ///     R: IntoIterator,
 /// {
-///     lockstep(left.into_iter(), right.into_iter(), |_, _| Control::Yield)
+///     lockstep(left, right, |_, _| Control::Yield)
 /// }
 /// ```
 /// Compose two sorted iterators to only yield elements which they have in common.
@@ -50,7 +50,7 @@
 ///     R: IntoIterator<Item = T>,
 ///     T: Ord,
 /// {
-///     lockstep(left.into_iter(), right.into_iter(), |l, r| {
+///     lockstep(left, right, |l, r| {
 ///         match l.cmp(r) {
 ///             Ordering::Less => Control::SkipLeft,
 ///             Ordering::Equal => Control::Yield,
@@ -60,15 +60,15 @@
 ///     .map(|(l, _)| l)
 /// }
 /// ```
-pub fn lockstep<L, R, F>(left: L, right: R, f: F) -> Lockstep<L, R, F>
+pub fn lockstep<L, R, F>(left: L, right: R, f: F) -> Lockstep<L::IntoIter, R::IntoIter, F>
 where
     L: IntoIterator,
     R: IntoIterator,
     F: FnMut(&L::Item, &R::Item) -> Control,
 {
     Lockstep {
-        left,
-        right,
+        left: left.into_iter(),
+        right: right.into_iter(),
         stepper: f,
     }
 }
@@ -178,7 +178,7 @@ mod tests {
             R: IntoIterator<Item = T>,
             T: Ord,
         {
-            lockstep(left.into_iter(), right.into_iter(), |l, r| match l.cmp(r) {
+            lockstep(left, right, |l, r| match l.cmp(r) {
                 Ordering::Less => Control::SkipLeft,
                 Ordering::Equal => Control::Yield,
                 Ordering::Greater => Control::SkipRight,
@@ -202,12 +202,18 @@ mod tests {
             L: IntoIterator,
             R: IntoIterator,
         {
-            lockstep(left.into_iter(), right.into_iter(), |_, _| Control::Yield)
+            lockstep(left, right, |_, _| Control::Yield)
         }
 
         assert_equal(zip_([0, 1, 2], [3, 4, 5]), [(0, 3), (1, 4), (2, 5)]);
         assert_equal(zip_([0, 1, 2], [3, 4]), [(0, 3), (1, 4)]);
         assert_equal(zip_::<[i32; 0], [i32; 2]>([], [3, 4]), []);
         assert_equal(zip_::<[i32; 0], [i32; 0]>([], []), []);
+    }
+
+    #[test]
+    fn size_hint() {
+        let ls = lockstep([0, 1, 2, 3], [0, 1, 2], |_, _| Control::SkipLeft);
+        assert_eq!(ls.size_hint(), (0, Some(3)));
     }
 }
