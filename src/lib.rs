@@ -85,6 +85,8 @@ pub enum Control {
     SkipRight,
     /// Yield the pair and step both the left and the right iterator.
     Yield,
+    /// Stop iteration and return [`None`].
+    Break,
 }
 
 /// An iterator which selectively increments either the left or right iterator, or yields elements
@@ -119,6 +121,7 @@ where
                     next_right = self.right.next()?;
                 }
                 Control::Yield => return Some((next_left, next_right)),
+                Control::Break => return None,
             }
         }
     }
