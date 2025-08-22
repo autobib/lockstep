@@ -5,5 +5,5 @@ description = "An iterator adaptor for selective zipping"
 keywords = ["iterator", "data-structure", "zip", "product"]
 categories = ["algorithms", "rust-patterns", "no-std"]
 license = "MIT OR Apache-2.0"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
