@@ -18,9 +18,10 @@
 /// - If [`Control::SkipLeft`] is returned, `l` is replaced by the next element from the left iterator
 ///   (if any).
 /// - If [`Control::SkipRight`] is returned, `r` is replaced by the next element from the right iterator
-///   (if any). If
+///   (if any).
 /// - If [`Control::Yield`] is returned, `(l, r)` is returned as an element in the resulting
 ///   iterator.
+/// - If [`Control::Break`] is returned, return `None`.
 ///
 /// If either internal iterator is exhausted, this iterator terminates.
 ///
@@ -60,6 +61,36 @@
 ///     .map(|(l, _)| l)
 /// }
 /// ```
+///
+/// ## Not fused
+/// Depending on the implementation of the closure, the iterator may not be fused, even when
+/// `L::IntoIter` and `R::IntoIter` are fused.
+///
+/// When the internal closure returns `Control::Break`, the currently processed elements are
+/// immediately dropped, and `None` is returned. However, the next call could proceed to yield new
+/// elements.
+///
+/// If `L::IntoIter` and `R::IntoIter` are fused and `Control::Break` is never returned, then this
+/// iterator is fused.
+/// ```
+/// use core::cmp::Ordering;
+///
+/// use lockstep::{lockstep, Control};
+///
+/// let mut idx = 1;
+/// let mut ls = lockstep([0, 1], [2, 3], |_, _| {
+///     if idx > 0 {
+///         idx -= 1;
+///         Control::Break
+///     } else {
+///         Control::Yield
+///     }
+/// });
+///
+/// assert_eq!(ls.next(), None);
+/// assert_eq!(ls.next(), Some((1,3)));
+/// assert_eq!(ls.next(), None);
+/// ```
 pub fn lockstep<L, R, F>(left: L, right: R, f: F) -> Lockstep<L::IntoIter, R::IntoIter, F>
 where
     L: IntoIterator,
@@ -79,13 +110,13 @@ where
 /// documentation for more detail.
 #[derive(Debug, Clone, Copy)]
 pub enum Control {
-    /// Skip the current item from the left iterator.
+    /// Drop the current item from the left iterator.
     SkipLeft,
-    /// Skip the current item from the right iterator.
+    /// Drop the current item from the right iterator.
     SkipRight,
     /// Yield the pair and step both the left and the right iterator.
     Yield,
-    /// Stop iteration and return [`None`].
+    /// Drop the pair and return [`None`].
     Break,
 }
 
@@ -218,5 +249,21 @@ mod tests {
     fn size_hint() {
         let ls = lockstep([0, 1, 2, 3], [0, 1, 2], |_, _| Control::SkipLeft);
         assert_eq!(ls.size_hint(), (0, Some(3)));
+    }
+
+    #[test]
+    fn not_fused() {
+        let mut idx = 1;
+        let mut ls = lockstep([0, 1], [2, 3], |_, _| {
+            if idx > 0 {
+                idx -= 1;
+                Control::Break
+            } else {
+                Control::Yield
+            }
+        });
+        assert!(ls.next().is_none());
+        assert!(ls.next().is_some());
+        assert!(ls.next().is_none());
     }
 }
